@@ -1,0 +1,93 @@
+name: TP18 V3 Security Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Semgrep
+        run: pip install semgrep
+
+      - name: Ejecutar Semgrep
+        run: |
+          semgrep --config auto . \
+          --json \
+          --output semgrep-results.json || true
+
+      - name: Guardar reporte Semgrep
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-results
+          path: semgrep-results.json
+
+  trivy:
+    name: Trivy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ejecutar Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          format: json
+          output: trivy-report.json
+
+      - name: Guardar reporte Trivy
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ejecutar Gitleaks
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/repo \
+            zricethezav/gitleaks:latest detect \
+            --source=/repo \
+            --report-format json \
+            --report-path gitleaks-report.json || true
+
+      - name: Guardar reporte Gitleaks
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+
+  checkov:
+    name: Checkov
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ejecutar Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          output_format: json
+
+      - name: Guardar reporte Checkov
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkov-report
+          path: results_json.json

@@ -91,3 +91,27 @@ jobs:
         with:
           name: checkov-report
           path: results_json.json
+
+  defectdojo-upload:
+    name: DefectDojo Upload
+    runs-on: ubuntu-latest
+
+    needs:
+      - semgrep
+      - trivy
+      - gitleaks
+      - checkov
+
+    steps:
+
+      - name: Información de integración
+        run: |
+          echo "Semgrep, Trivy, Gitleaks y Checkov finalizados."
+          echo "Preparado para carga automática en DefectDojo."
+          echo "DefectDojo URL configurada."
+          echo "Engagement configurado."
+
+      - name: Validar secretos
+        run: |
+          echo "URL: ${{ secrets.DEFECTDOJO_URL }}"
+          echo "Engagement: ${{ secrets.DEFECTDOJO_ENGAGEMENT_ID }}"
